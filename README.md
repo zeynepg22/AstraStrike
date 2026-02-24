@@ -1,71 +1,63 @@
 # AstraStrike v2 - Neon Core Defense
 
-AstraStrike, renk eslestirme odakli hizli bir 2D tarayici oyunudur. Oyuncu merkezdeki core'u savunur, dogru renk mermilerle dusmanlari yok eder ve seviyeleri ilerletir.
+AstraStrike, renk eşleştirme odaklı 2D tarayıcı oyunudur. Oyuncu merkezdeki core'u savunur, doğru renk mermilerle düşmanları yok eder ve seviyeleri ilerletir.
 
-## Proje Notu (Gelistirme Sureci)
-Bu proje, **hayal edilen oyun tasarimi ve teknik bilgiler temel alinarak** gelistirilmistir.
-Eksik kalinan kisimlarda ve denge/oynanabilirlik iyilestirmelerinde **Codex'e basvurularak v2 surumu tamamlanmistir**.
+## Proje Notu (Geliştirme Süreci)
+Bu proje, **hayal edilen oyun tasarımı ve teknik bilgiler temel alınarak** geliştirilmiştir.
+Eksik kalınan kısımlarda ve denge/oynanabilirlik iyileştirmelerinde **Codex'e başvurularak v2 sürümü tamamlanmıştır**.
 
-Kisaca:
-- Fikir, yon ve oyun hedefleri insan tarafindan belirlendi.
-- Teknik uygulama sirasinda zorlanilan bolumler Codex destegiyle cozuldu.
-- Sonuc: ana surum korunarak daha oynanabilir bir `v2` cikarildi.
+Kısaca:
+- Teknik uygulama sırasında zorlanılan bölümler Codex desteğiyle çözüldü.
+- Sonuç: Ana sürüm korunarak daha oynanabilir bir `v2` çıkarıldı.
 
 ## Neden v2?
-Ilk surumde ana mekanik calisiyor olsa da oynanis adaleti ve geri bildirim tarafinda buyuk bosluklar vardi:
-- Kaybetme kosulu net degildi.
-- Renk atis sistemi fazla rastgeleydi.
-- Zorluk artisi fazla sertti.
-- Kontroller ve oyun ici yonlendirme yetersizdi.
+İlk sürümde ana mekanik çalışıyor olsa da oynanış adaleti ve geri bildirim tarafında boşluklar vardı:
+- Kaybetme koşulu net değildi.
+- Renk atış sistemi fazla rastgeleydi.
+- Zorluk artışı fazla sertti.
+- Kontroller ve oyun içi yönlendirme yetersizdi.
 
-v2 ile hedef, projeyi asiri karmasiklastirmadan daha adil ve anlasilir bir deneyim olusturmaktir.
+v2 ile hedef, projeyi çok karmaşıklaştırmadan daha adil ve anlaşılır bir deneyim oluşturmaktır.
 
-## v2 ile Gelen Iyilestirmeler
+## v2 ile Gelen İyileştirmeler
 - `HP` sistemi eklendi (`coreHP = 5`).
-- Net `Game Over` akisi eklendi.
-- `Space` ile baslat / yeniden baslat akisi eklendi.
-- Atis icin kisa cooldown eklendi (spam azaltildi).
-- Seviye gecislerinde kisa spawn molasi eklendi.
-- Zorluk artis egisi yumusatildi (`spawnRate`, `enemySpeed`).
-- HUD gelistirildi (HP + secili renk + kontrol hatirlatmasi).
-- Yanlis renk atisinda anlik geri bildirim mesaji eklendi.
+- Net `Game Over` akışı eklendi.
+- `Space` ile başlat / yeniden başlat akışı eklendi.
+- Atış için kısa cooldown eklendi (spam azaltıldı).
+- Seviye geçişlerinde kısa spawn molası eklendi.
+- Zorluk artış eğisi yumuşatıldı (`spawnRate`, `enemySpeed`).
+- HUD geliştirildi (HP + seçili renk + kontrol hatırlatması).
+- Yanlış renk atışında anlık geri bildirim mesajı eklendi.
 
-## Kullanilan Teknolojiler
+## Kullanılan Teknolojiler
 - HTML5
 - CSS3
 - Vanilla JavaScript
 - Canvas 2D API
 
-Ek framework veya oyun motoru kullanilmadi.
-
-## Calistirma
-1. Proje klasorune girin.
-2. `astra_v2.html` dosyasini tarayicida acin.
-3. Oyunu baslatmak icin `Space` tusuna basin.
+Ek framework veya oyun motoru kullanılmadı.
 
 ## Kontroller
-- Nisan alma: Mouse hareketi
-- Ates: Sol tik
-- Renk secimi: `Q/W/E/R` veya `1/2/3/4`
-- Baslat / yeniden baslat: `Space`
+- Nişan alma: Mouse hareketi
+- Ateş: Sol tık
+- Renk seçimi: `Q/W/E/R` veya `1/2/3/4`
+- Başlat / yeniden başlat: `Space`
 
-## Oyun Dongusu
-1. Dusmanlar merkeze dogru ilerler.
-2. Oyuncu dogru renkte mermi ile dusmani vurursa puan kazanir.
-3. Dusman core'a ulasirsa HP azalir.
-4. HP sifirlaninca oyun biter.
-5. Puan hedefi gecilince seviye atlanir.
+## Oyun Döngüsü
+1. Düşmanlar merkeze doğru ilerler.
+2. Oyuncu doğru renkte mermi ile düşmanı vurursa puan kazanır.
+3. Düşman core'a ulaşırsa HP azalır.
+4. HP sıfırlanınca oyun biter.
+5. Puan hedefi geçilince seviye atlanır.
 
-## Gelistirme Vizyonu
-Bu proje, tek kisilik bir gelistirme surecinde tasarlanmis; pratikte zorlanilan yerlerde Codex'ten teknik destek alinmis bir calismadir.
-Amaç, "tek basina sifirdan yazilmis" gorunumu vermek degil; dogru araclari kullanarak fikri calisan ve gelistirilebilir bir urune donusturmektir.
+## Geliştirme Vizyonu
+Bu proje, tek kişilik bir geliştirme sürecinde tasarlanmış; pratikte zorlanılan yerlerde Codex'ten teknik destek alınmış bir çalışmadır. Oluşumu ve son haline gelişi süreç içermektedir.
+Amaç, "tek başına sıfırdan yazılmış" görünümü vermek değil; doğru araçları doğru şekilde kullanarak fikri çalışan ve geliştirilebilir bir ürüne dönüştürmektir.
 
-## Sonraki Adim Fikirleri
+## Sonraki Adım Fikirleri
 - Mobil dokunmatik kontrol
 - Combo / zincir skor sistemi
 - Basit ses efektleri
-- Wave tabanli spawn yapisi
-- Daha detayli denge ayarlari
+- Wave tabanlı spawn yapısı
+- Daha detaylı denge ayarları
 
----
-Hazirlayan: Proje sahibi + Codex destekli gelistirme sureci
