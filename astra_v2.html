@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraStrike: Neon Core Defense (v2)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; }
+
+        #ui {
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            color: #fff; pointer-events: none; z-index: 10;
+        }
+
+        .level-tag { color: #00f2fe; font-size: 18px; letter-spacing: 4px; margin-bottom: 5px; }
+        .score-tag { font-size: 52px; font-weight: 700; text-shadow: 0 0 20px rgba(0, 242, 254, 0.6); }
+        #target { color: rgba(255, 255, 255, 0.5); font-size: 13px; margin-top: 4px; }
+        #status { color: rgba(255, 255, 255, 0.8); font-size: 13px; margin-top: 6px; }
+
+        #msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #fff; font-size: 32px; text-shadow: 0 0 30px #fff;
+            display: none; white-space: nowrap; z-index: 20;
+            pointer-events: none;
+        }
+
+        #overlay {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.72); color: #fff; z-index: 30;
+            text-align: center; padding: 24px;
+        }
+
+        #panel {
+            border: 1px solid rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+            padding: 18px 22px;
+            max-width: 680px;
+            line-height: 1.6;
+            font-size: 14px;
+            background: rgba(5, 10, 20, 0.65);
+        }
+
+        .legend { margin-top: 10px; font-size: 13px; opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div id="levelDisplay" class="level-tag">LEVEL 01</div>
+        <div class="score-tag"><span id="score">0</span></div>
+        <div id="target">NEXT LEVEL AT 300 ENERGY</div>
+        <div id="status">HP: 5 | COLOR: #FF0055 | Q/W/E/R veya 1/2/3/4</div>
+    </div>
+
+    <div id="msg">SİSTEM GÜNCELLENDİ</div>
+
+    <div id="overlay">
+        <div id="panel">
+            <h2 style="margin: 0 0 10px 0; color: #00f2fe;">ASTRASTRIKE v2</h2>
+            <div>Renk eşleştirerek düşmanları yok et.</div>
+            <div>Core'a çarpan her düşman 1 HP azaltır.</div>
+            <div class="legend">Kontrol: Sol tık ateş | Q/W/E/R veya 1/2/3/4 renk seçimi | SPACE başlat / yeniden başlat</div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('levelDisplay');
+const targetEl = document.getElementById('target');
+const statusEl = document.getElementById('status');
+const msgEl = document.getElementById('msg');
+const overlayEl = document.getElementById('overlay');
+const panelEl = document.getElementById('panel');
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.onresize = resize;
+resize();
+
+const COLORS = ['#FF0055', '#00FF99', '#00CCFF', '#FFFF00'];
+
+let score = 0;
+let level = 1;
+let levelTarget = 300;
+let coreHP = 5;
+let enemies = [];
+let bullets = [];
+let particles = [];
+let selectedColorIndex = 0;
+let mouseAngle = 0;
+let gameState = 'waiting';
+let spawnPauseUntil = 0;
+let lastShotAt = 0;
+let flashTimer = 0;
+
+const getLevelSettings = () => ({
+    spawnRate: Math.min(0.045, 0.008 + (level * 0.004)),
+    enemySpeed: 0.35 + (level * 0.08),
+    bulletSpeed: 24,
+    shotCooldownMs: 130
+});
+
+class Enemy {
+    constructor() {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.max(canvas.width, canvas.height) * 0.7;
+        this.x = canvas.width / 2 + Math.cos(angle) * dist;
+        this.y = canvas.height / 2 + Math.sin(angle) * dist;
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.speed = getLevelSettings().enemySpeed;
+        this.radius = 14 + Math.min(10, level * 1.2);
+    }
+
+    update() {
+        const angle = Math.atan2(canvas.height / 2 - this.y, canvas.width / 2 - this.x);
+        this.x += Math.cos(angle) * this.speed;
+        this.y += Math.sin(angle) * this.speed;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const a = i * Math.PI / 3;
+            ctx.lineTo(this.x + Math.cos(a) * this.radius, this.y + Math.sin(a) * this.radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.v = { x: (Math.random() - 0.5) * 12, y: (Math.random() - 0.5) * 12 };
+        this.alpha = 1;
+    }
+
+    update() {
+        this.x += this.v.x;
+        this.y += this.v.y;
+        this.alpha -= 0.03;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 3, 3);
+        ctx.restore();
+    }
+}
+
+function showMessage(text, duration = 900) {
+    msgEl.innerText = text;
+    msgEl.style.display = 'block';
+    setTimeout(() => {
+        msgEl.style.display = 'none';
+    }, duration);
+}
+
+function updateHUD() {
+    scoreEl.innerText = score;
+    levelEl.innerText = `LEVEL ${level < 10 ? '0' + level : level}`;
+    targetEl.innerText = `NEXT LEVEL AT ${levelTarget} ENERGY`;
+    statusEl.innerText = `HP: ${coreHP} | COLOR: ${COLORS[selectedColorIndex]} | Q/W/E/R veya 1/2/3/4`;
+}
+
+function setColorByKey(key) {
+    const map = {
+        q: 0, w: 1, e: 2, r: 3,
+        '1': 0, '2': 1, '3': 2, '4': 3
+    };
+    const next = map[key.toLowerCase()];
+    if (next !== undefined) {
+        selectedColorIndex = next;
+        updateHUD();
+    }
+}
+
+function resetGame() {
+    score = 0;
+    level = 1;
+    levelTarget = 300;
+    coreHP = 5;
+    enemies = [];
+    bullets = [];
+    particles = [];
+    selectedColorIndex = 0;
+    spawnPauseUntil = performance.now() + 1200;
+    lastShotAt = 0;
+    flashTimer = 0;
+    updateHUD();
+}
+
+function startGame() {
+    resetGame();
+    gameState = 'running';
+    overlayEl.style.display = 'none';
+    showMessage('SISTEM AKTIF', 800);
+}
+
+function endGame() {
+    gameState = 'over';
+    overlayEl.style.display = 'flex';
+    panelEl.innerHTML = `
+        <h2 style="margin: 0 0 10px 0; color: #FF0055;">GAME OVER</h2>
+        <div>Skor: <strong>${score}</strong></div>
+        <div>Seviye: <strong>${level}</strong></div>
+        <div class="legend">SPACE ile yeniden baslat</div>
+    `;
+}
+
+function levelUp() {
+    level += 1;
+    levelTarget += 300 + (level * 120);
+    enemies = [];
+    spawnPauseUntil = performance.now() + 1600;
+    updateHUD();
+    showMessage(`SISTEM GUNCELLENDI: LEVEL ${level}`, 1200);
+}
+
+function drawAstraCore() {
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(mouseAngle);
+    ctx.strokeStyle = '#00f2fe';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#00f2fe';
+    ctx.beginPath();
+    ctx.arc(0, 0, 40, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = COLORS[selectedColorIndex];
+    ctx.fillRect(35, -10, 20, 20);
+    ctx.restore();
+}
+
+function tryShoot(now) {
+    if (gameState !== 'running') return;
+    const settings = getLevelSettings();
+    if (now - lastShotAt < settings.shotCooldownMs) return;
+    lastShotAt = now;
+
+    bullets.push({
+        x: canvas.width / 2 + Math.cos(mouseAngle) * 45,
+        y: canvas.height / 2 + Math.sin(mouseAngle) * 45,
+        v: {
+            x: Math.cos(mouseAngle) * settings.bulletSpeed,
+            y: Math.sin(mouseAngle) * settings.bulletSpeed
+        },
+        color: COLORS[selectedColorIndex]
+    });
+}
+
+window.onmousemove = (e) => {
+    mouseAngle = Math.atan2(e.clientY - canvas.height / 2, e.clientX - canvas.width / 2);
+};
+
+window.onmousedown = () => {
+    tryShoot(performance.now());
+};
+
+window.onkeydown = (e) => {
+    if (e.code === 'Space') {
+        if (gameState === 'waiting' || gameState === 'over') {
+            startGame();
+        }
+        return;
+    }
+
+    setColorByKey(e.key);
+};
+
+function loop(now) {
+    ctx.fillStyle = flashTimer > 0 ? 'rgba(40, 0, 0, 0.28)' : 'rgba(0, 0, 5, 0.2)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (flashTimer > 0) flashTimer -= 1;
+
+    if (gameState === 'running' && score >= levelTarget) {
+        levelUp();
+    }
+
+    drawAstraCore();
+
+    if (gameState === 'running' && now > spawnPauseUntil) {
+        if (Math.random() < getLevelSettings().spawnRate) {
+            enemies.push(new Enemy());
+        }
+    }
+
+    for (let bi = bullets.length - 1; bi >= 0; bi--) {
+        const b = bullets[bi];
+        b.x += b.v.x;
+        b.y += b.v.y;
+
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.x - b.v.x * 0.5, b.y - b.v.y * 0.5);
+        ctx.stroke();
+
+        let hit = false;
+        for (let ei = enemies.length - 1; ei >= 0; ei--) {
+            const e = enemies[ei];
+            if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + 15) {
+                if (b.color === e.color) {
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(e.x, e.y, e.color));
+                    }
+                    enemies.splice(ei, 1);
+                    score += 50;
+                    updateHUD();
+                } else {
+                    const pushAngle = Math.atan2(e.y - canvas.height / 2, e.x - canvas.width / 2);
+                    e.x += Math.cos(pushAngle) * 25;
+                    e.y += Math.sin(pushAngle) * 25;
+                    showMessage('YANLIS RENK', 350);
+                }
+                hit = true;
+                break;
+            }
+        }
+
+        if (hit || b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+            bullets.splice(bi, 1);
+        }
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        e.update();
+        e.draw();
+
+        if (Math.hypot(e.x - canvas.width / 2, e.y - canvas.height / 2) < 45) {
+            enemies.splice(i, 1);
+            coreHP -= 1;
+            score = Math.max(0, score - 30);
+            flashTimer = 10;
+            updateHUD();
+
+            if (coreHP <= 0) {
+                endGame();
+            }
+        }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].alpha <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+
+    requestAnimationFrame(loop);
+}
+
+updateHUD();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
